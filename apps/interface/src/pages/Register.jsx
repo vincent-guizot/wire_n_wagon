@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { KeyRound, Mail, User as UserIcon, AlertCircle, Compass } from 'lucide-react';
+import { useAuth } from '../app/context/AuthContext';
+import { KeyRound, Mail, User, ArrowRight } from 'lucide-react';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -9,6 +9,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -28,35 +29,49 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-stone-50 border-2 border-stone-300 rounded shadow-xl p-8 relative">
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-900 rounded-t"></div>
+    <div
+      className="min-h-screen w-full relative flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-cover bg-center bg-no-repeat font-serif"
+      style={{
+        backgroundImage: `linear-gradient(rgba(10, 16, 14, 0.5), rgba(8, 12, 10, 0.75)), url('/background.png')`
+      }}
+    >
+      <div
+        className="w-full max-w-[480px] bg-[#fdfbf6] text-[#241c14] border-4 border-[#3d2c1c] rounded-lg shadow-2xl p-6 sm:p-8 relative overflow-hidden"
+        style={{
+          backgroundImage: `url('/parchment-paper.png')`,
+          backgroundSize: 'cover'
+        }}
+      >
+        <div className="absolute top-3 right-3 w-16 h-16 pointer-events-none opacity-85">
+          <img src="/est-1900-stamp.png" alt="Stamp" className="w-full h-full object-contain filter contrast-125" />
+        </div>
 
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-amber-900 text-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 shadow">
-            <Compass className="w-7 h-7" />
+        <div className="flex flex-col items-center justify-center mb-5">
+          <div className="w-14 h-14 mb-2">
+            <img src="/compass.png" alt="Emblem" className="w-full h-full object-contain filter drop-shadow" />
           </div>
-          <h2 className="text-2xl font-heading font-bold text-stone-900">Client Registry Ledger</h2>
-          <p className="text-xs font-mono text-stone-600 mt-1 uppercase tracking-widest">
-            Wire & Wagon · New Merchant Account
-          </p>
+          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#21170d] tracking-wider text-center">
+            CLIENT REGISTRY LEDGER
+          </h2>
+          <div className="text-[10px] text-[#785b3b] font-mono tracking-widest uppercase font-bold mt-0.5">
+            WIRE & WAGON · NEW MERCHANT ACCOUNT
+          </div>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded text-red-800 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-4 p-3 bg-[#fdf2f2] border border-[#f5c2c2] rounded text-[#8b1c1c] text-xs font-serif leading-relaxed">
+            {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Merchant Username
+            <label className="block text-[11px] font-bold text-[#453421] uppercase tracking-wider mb-1 font-mono">
+              MERCHANT USERNAME
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-                <UserIcon className="w-4 h-4" />
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#735e46]">
+                <User className="w-4 h-4" />
               </span>
               <input
                 type="text"
@@ -64,17 +79,17 @@ export default function Register() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. guild_merchant"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-stone-300 rounded text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-amber-800"
+                className="w-full pl-9 pr-3 py-2 bg-white/90 border border-[#b8a88f] rounded text-sm text-[#241c14] focus:ring-2 focus:ring-[#853c12] focus:outline-none shadow-inner font-serif"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Official Telegraph Email
+            <label className="block text-[11px] font-bold text-[#453421] uppercase tracking-wider mb-1 font-mono">
+              OFFICIAL TELEGRAPH EMAIL
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#735e46]">
                 <Mail className="w-4 h-4" />
               </span>
               <input
@@ -83,17 +98,17 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="merchant@guild.com"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-stone-300 rounded text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-amber-800"
+                className="w-full pl-9 pr-3 py-2 bg-white/90 border border-[#b8a88f] rounded text-sm text-[#241c14] focus:ring-2 focus:ring-[#853c12] focus:outline-none shadow-inner font-serif"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Cipher Code (Password - Min 6 chars)
+            <label className="block text-[11px] font-bold text-[#453421] uppercase tracking-wider mb-1 font-mono">
+              CIPHER CODE (PASSWORD - MIN 6 CHARS)
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#735e46]">
                 <KeyRound className="w-4 h-4" />
               </span>
               <input
@@ -103,7 +118,7 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-stone-300 rounded text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800 focus:border-amber-800"
+                className="w-full pl-9 pr-3 py-2 bg-white/90 border border-[#b8a88f] rounded text-sm text-[#241c14] focus:ring-2 focus:ring-[#853c12] focus:outline-none shadow-inner font-mono tracking-widest"
               />
             </div>
           </div>
@@ -111,14 +126,15 @@ export default function Register() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 px-4 bg-amber-800 hover:bg-amber-900 text-stone-100 font-heading font-semibold text-sm rounded border border-amber-950 shadow tracking-wider uppercase transition disabled:opacity-50"
+            className="w-full py-3 px-4 bg-gradient-to-b from-[#873e16] to-[#59260a] hover:from-[#9c481a] hover:to-[#6b2e0c] text-[#fff0cf] font-heading font-bold text-xs uppercase tracking-widest rounded border-2 border-[#b57a2b] shadow-md flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
-            {isSubmitting ? 'Registering Merchant...' : 'Create Client Account'}
+            <span>{isSubmitting ? 'Registering...' : 'CREATE CLIENT ACCOUNT'}</span>
+            <ArrowRight className="w-4 h-4 text-[#ffd885]" />
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Link to="/login" className="text-xs text-amber-900 hover:underline font-serif">
+        <div className="mt-5 pt-3 border-t border-[#d8caba] text-center">
+          <Link to="/login" className="text-xs text-[#853c12] hover:underline font-serif">
             Already registered? Back to Telegraph Station Sign-In &rarr;
           </Link>
         </div>

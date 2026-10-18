@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../api/axiosInstance';
-import { Compass, Users, Truck, DollarSign, PlusCircle, Trash2, Edit2, ShieldAlert } from 'lucide-react';
+import accService from '../../api/services/accService';
+import vehicleService from '../../api/services/vehicleService';
+import userService from '../../api/services/userService';
+import { formatCurrency } from '../../helpers/formatters';
+import { Users, Truck, DollarSign, PlusCircle, Trash2, RotateCcw, Crown } from 'lucide-react';
 
 export default function OwnerDashboard() {
   const [analytics, setAnalytics] = useState(null);
@@ -26,13 +29,13 @@ export default function OwnerDashboard() {
     try {
       setLoading(true);
       const [analyticsRes, vehiclesRes, usersRes] = await Promise.all([
-        api.get('/acc/analytics'),
-        api.get('/vehicles'),
-        api.get('/users')
+        accService.getAnalytics(),
+        vehicleService.getVehicles(),
+        userService.getUsers()
       ]);
-      setAnalytics(analyticsRes.data.data);
-      setVehicles(vehiclesRes.data.data);
-      setUsers(usersRes.data.data);
+      setAnalytics(analyticsRes.data);
+      setVehicles(vehiclesRes.data);
+      setUsers(usersRes.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch proprietor ledger');
     } finally {
@@ -50,7 +53,7 @@ export default function OwnerDashboard() {
     setSuccess('');
 
     try {
-      await api.post('/vehicles', {
+      await vehicleService.createVehicle({
         name: newVehicleName,
         type: newVehicleType,
         capacity_kg: parseInt(newVehicleCapacity, 10),
@@ -70,7 +73,7 @@ export default function OwnerDashboard() {
     setError('');
     setSuccess('');
     try {
-      await api.put(`/vehicles/${vehicle.id}`, {
+      await vehicleService.updateVehicle(vehicle.id, {
         is_available: !vehicle.is_available
       });
       setSuccess(`Vehicle ${vehicle.name} status updated.`);
@@ -85,7 +88,7 @@ export default function OwnerDashboard() {
     setError('');
     setSuccess('');
     try {
-      await api.delete(`/vehicles/${vehicleId}`);
+      await vehicleService.deleteVehicle(vehicleId);
       setSuccess('Vehicle removed from fleet registry.');
       fetchData();
     } catch (err) {
@@ -99,7 +102,7 @@ export default function OwnerDashboard() {
     setSuccess('');
 
     try {
-      await api.post('/users', {
+      await userService.createStaff({
         username: newStaffUsername,
         email: newStaffEmail,
         password: newStaffPassword,
@@ -120,7 +123,7 @@ export default function OwnerDashboard() {
     setError('');
     setSuccess('');
     try {
-      await api.delete(`/users/${userId}`);
+      await userService.deleteUser(userId);
       setSuccess(`User ${username} deleted.`);
       fetchData();
     } catch (err) {
@@ -129,270 +132,288 @@ export default function OwnerDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="border-b-2 border-stone-300 pb-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-stone-900">
-            Proprietor Executive Ledger & Fleet Registry
-          </h1>
-          <p className="text-sm font-mono text-stone-600 uppercase tracking-widest mt-1">
-            Company Financials · Steam & Rail Fleet Inventory · Personnel Credentials
-          </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-serif">
+      {/* Page Title */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl sm:text-4xl font-heading font-bold text-[#1a140d] tracking-wide uppercase drop-shadow-2xs">
+          PROPRIETOR EXECUTIVE LEDGER & FLEET
+        </h1>
+        <div className="flex items-center justify-center gap-3 my-2">
+          <div className="h-[1px] w-16 bg-[#caa455]"></div>
+          <span className="text-[#caa455] text-xs">❖</span>
+          <div className="h-[1px] w-16 bg-[#caa455]"></div>
         </div>
-        <button
-          onClick={fetchData}
-          className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-mono font-bold rounded border border-stone-400 transition self-start"
-        >
-          ↻ Audit Company Records
-        </button>
+        <p className="text-xs font-mono font-semibold text-[#66533c] uppercase tracking-widest">
+          TREASURY REVENUE &nbsp;·&nbsp; FLEET COMMISSIONING &nbsp;·&nbsp; PERSONNEL ROSTER
+        </p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-700 text-red-900 text-sm flex items-center justify-between">
+        <div className="mb-6 p-4 bg-[#fdf2f2] border-l-4 border-[#8c1d18] text-[#8c1d18] text-xs rounded shadow-xs flex items-center justify-between">
           <span>{error}</span>
-          <button onClick={() => setError('')} className="text-red-700 font-bold">&times;</button>
+          <button onClick={() => setError('')} className="text-[#8c1d18] font-bold text-sm cursor-pointer">&times;</button>
         </div>
       )}
 
       {success && (
-        <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-700 text-emerald-950 text-sm flex items-center justify-between">
+        <div className="mb-6 p-4 bg-[#e6f8ee] border-l-4 border-[#16a34a] text-[#136336] text-xs rounded shadow-xs flex items-center justify-between">
           <span>{success}</span>
-          <button onClick={() => setSuccess('')} className="text-emerald-700 font-bold">&times;</button>
+          <button onClick={() => setSuccess('')} className="text-[#136336] font-bold text-sm cursor-pointer">&times;</button>
         </div>
       )}
 
-      {/* Financials & Overview */}
+      {/* Financials Overview */}
       {analytics && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="bg-amber-900 text-stone-100 p-6 rounded shadow border-2 border-amber-950">
-            <span className="text-xs font-mono text-amber-200 uppercase tracking-widest block">
-              Treasury Balance (Revenue)
+          <div className="bg-[#4d240d] text-[#fff0cf] p-6 rounded-lg shadow-md border-2 border-[#b57a2b]">
+            <span className="text-xs font-mono text-[#ecd89f] uppercase tracking-widest block font-bold">
+              TREASURY BALANCE (REVENUE)
             </span>
-            <div className="text-3xl font-heading font-bold text-amber-100 mt-2">
-              Rp {analytics.totalRevenue?.toLocaleString()}
+            <div className="text-3xl font-heading font-bold text-[#fff3db] mt-2">
+              {formatCurrency(analytics.totalRevenue)}
             </div>
-            <p className="text-xs text-amber-300/80 mt-1 font-serif">
+            <p className="text-xs text-[#e0cfb8] mt-1 italic">
               Cumulative freight tariffs collected from completed deliveries
             </p>
           </div>
 
-          <div className="bg-stone-50 border-2 border-stone-300 p-6 rounded shadow">
-            <span className="text-xs font-mono text-stone-500 uppercase tracking-widest block">
-              Completed Expeditions
+          <div className="bg-[#fdfbf6] border-2 border-[#cfc1a5] p-6 rounded-lg shadow-sm" style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}>
+            <span className="text-xs font-mono text-[#735e46] uppercase tracking-widest block font-bold">
+              COMPLETED EXPEDITIONS
             </span>
-            <div className="text-3xl font-heading font-bold text-emerald-900 mt-2">
+            <div className="text-3xl font-heading font-bold text-[#136336] mt-2">
               {analytics.totalCompleted}
             </div>
-            <p className="text-xs text-stone-600 mt-1 font-serif">
+            <p className="text-xs text-[#735e46] mt-1 italic">
               Total successful voyages across all territories
             </p>
           </div>
 
-          <div className="bg-stone-50 border-2 border-stone-300 p-6 rounded shadow">
-            <span className="text-xs font-mono text-stone-500 uppercase tracking-widest block">
-              Fleet Capacity & Armadas
+          <div className="bg-[#fdfbf6] border-2 border-[#cfc1a5] p-6 rounded-lg shadow-sm" style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}>
+            <span className="text-xs font-mono text-[#735e46] uppercase tracking-widest block font-bold">
+              OPERATING FLEET
             </span>
-            <div className="text-3xl font-heading font-bold text-stone-900 mt-2">
+            <div className="text-3xl font-heading font-bold text-[#1c140d] mt-2">
               {vehicles.length} Units
             </div>
-            <p className="text-xs text-stone-600 mt-1 font-serif">
+            <p className="text-xs text-[#735e46] mt-1 italic">
               Active operating locomotives, wagons, carts & boats
             </p>
           </div>
         </div>
       )}
 
-      {/* Grid: Armada Management & Personnel Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      {/* Grid: Armada Management & Personnel Credentials */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Armada Fleet Registry */}
-        <div className="bg-stone-50 border-2 border-stone-300 rounded p-6 shadow">
-          <h2 className="text-lg font-heading font-bold text-stone-900 mb-4 flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-amber-800" />
-              Armada Fleet Management ({vehicles.length})
-            </span>
-          </h2>
-
-          {/* Add Vehicle Form */}
-          <form onSubmit={handleAddVehicle} className="bg-white p-4 rounded border border-stone-200 mb-6 space-y-3">
-            <div className="font-heading font-bold text-xs uppercase tracking-wider text-stone-800">
-              Commission New Armada Unit
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                type="text"
-                required
-                value={newVehicleName}
-                onChange={(e) => setNewVehicleName(e.target.value)}
-                placeholder="Unit Name (e.g. Iron Duke 02)"
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              />
-              <select
-                value={newVehicleType}
-                onChange={(e) => setNewVehicleType(e.target.value)}
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              >
-                <option value="In-City">In-City (Urban)</option>
-                <option value="In-City / Short Inter-City">In-City / Short Inter-City</option>
-                <option value="Inter-City">Inter-City (Rail)</option>
-                <option value="River / Inter-City">River / Inter-City (Steamship)</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                type="number"
-                required
-                min="1"
-                value={newVehicleCapacity}
-                onChange={(e) => setNewVehicleCapacity(e.target.value)}
-                placeholder="Capacity (kg)"
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              />
-              <input
-                type="number"
-                required
-                min="1"
-                value={newVehicleCost}
-                onChange={(e) => setNewVehicleCost(e.target.value)}
-                placeholder="Cost per km (Rp)"
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              />
+        <div className="rounded-lg shadow-md overflow-hidden">
+          <div className="bg-[#0e271f] text-[#ecd89f] border-2 border-[#caa455] p-3 sm:p-3.5 flex items-center justify-between rounded-t-lg shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <Truck className="w-5 h-5 text-[#ecd89f]" />
+              <h2 className="font-heading font-bold text-sm sm:text-base tracking-wider uppercase text-[#fff0c9]">
+                ARMADA FLEET MANAGEMENT ({vehicles.length})
+              </h2>
             </div>
             <button
-              type="submit"
-              className="w-full py-1.5 bg-amber-800 hover:bg-amber-900 text-stone-100 font-bold text-xs rounded border border-amber-950 shadow"
+              onClick={fetchData}
+              className="text-xs font-mono font-bold text-[#ecd89f] hover:text-white flex items-center gap-1 transition cursor-pointer"
             >
-              + Commission Vehicle
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Refresh</span>
             </button>
-          </form>
+          </div>
 
-          {/* Vehicle List */}
-          <div className="space-y-3">
-            {vehicles.map((v) => (
-              <div
-                key={v.id}
-                className="bg-white p-3.5 rounded border border-stone-200 flex items-center justify-between gap-3 text-xs"
+          <div
+            className="border-x-2 border-b-2 border-[#cfc1a5] bg-[#fbf9f4] p-5 sm:p-6 rounded-b-lg space-y-4"
+            style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}
+          >
+            {/* Add Vehicle Form */}
+            <form onSubmit={handleAddVehicle} className="bg-white/95 p-4 rounded-md border border-[#dfd4bf] space-y-3">
+              <div className="font-heading font-bold text-xs uppercase tracking-wider text-[#3d2d1b]">
+                Commission New Armada Unit
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  required
+                  value={newVehicleName}
+                  onChange={(e) => setNewVehicleName(e.target.value)}
+                  placeholder="Unit Name (e.g. Iron Duke 02)"
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                />
+                <select
+                  value={newVehicleType}
+                  onChange={(e) => setNewVehicleType(e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                >
+                  <option value="In-City">In-City (Urban)</option>
+                  <option value="In-City / Short Inter-City">In-City / Short Inter-City</option>
+                  <option value="Inter-City">Inter-City (Rail)</option>
+                  <option value="River / Inter-City">River / Inter-City (Steamship)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={newVehicleCapacity}
+                  onChange={(e) => setNewVehicleCapacity(e.target.value)}
+                  placeholder="Capacity (kg)"
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                />
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={newVehicleCost}
+                  onChange={(e) => setNewVehicleCost(e.target.value)}
+                  placeholder="Cost per km (Rp)"
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 bg-gradient-to-b from-[#873e16] to-[#59260a] text-[#fff0cf] font-heading font-bold text-xs uppercase tracking-wider rounded border border-[#caa455] shadow transition cursor-pointer"
               >
-                <div>
-                  <strong className="text-stone-900 text-sm font-heading">{v.name}</strong>
-                  <div className="text-stone-500 font-mono text-[11px]">
-                    {v.type} · Cap: {v.capacity_kg} kg · Rp {v.cost_per_km}/km
+                + Commission Vehicle
+              </button>
+            </form>
+
+            {/* Vehicle List */}
+            <div className="space-y-3">
+              {vehicles.map((v) => (
+                <div
+                  key={v.id}
+                  className="bg-white/95 p-3.5 rounded-md border border-[#dfd4bf] flex items-center justify-between gap-3 text-xs shadow-2xs"
+                >
+                  <div>
+                    <strong className="text-stone-900 text-sm font-heading">{v.name}</strong>
+                    <div className="text-[#735e46] font-mono text-[11px] mt-0.5">
+                      {v.type} · Cap: {v.capacity_kg} kg · Rp {v.cost_per_km}/km
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleVehicleAvailability(v)}
+                      className={`px-2 py-1 rounded text-[10px] font-mono font-bold uppercase transition cursor-pointer ${
+                        v.is_available
+                          ? 'bg-[#e6f8ee] text-[#136336] border border-[#7ed49d]'
+                          : 'bg-[#ebdcc4] text-[#6b583e] border border-[#cfc3aa]'
+                      }`}
+                    >
+                      {v.is_available ? 'Available' : 'In Shop'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteVehicle(v.id)}
+                      className="p-1 text-[#8c1d18] hover:bg-[#fdeeed] rounded cursor-pointer"
+                      title="Decommission vehicle"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleToggleVehicleAvailability(v)}
-                    className={`px-2 py-1 rounded text-[10px] font-mono font-bold uppercase ${
-                      v.is_available
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : 'bg-stone-200 text-stone-600 border border-stone-300'
-                    }`}
-                  >
-                    {v.is_available ? 'Available' : 'In Shop'}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteVehicle(v.id)}
-                    className="p-1 text-red-700 hover:bg-red-50 rounded"
-                    title="Decommission vehicle"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Right: Staff Credentials Management */}
-        <div className="bg-stone-50 border-2 border-stone-300 rounded p-6 shadow">
-          <h2 className="text-lg font-heading font-bold text-stone-900 mb-4 flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-amber-800" />
-              Personnel & Staff Credentials ({users.length})
-            </span>
-          </h2>
-
-          {/* Add Staff Form */}
-          <form onSubmit={handleCreateStaff} className="bg-white p-4 rounded border border-stone-200 mb-6 space-y-3">
-            <div className="font-heading font-bold text-xs uppercase tracking-wider text-stone-800">
-              Appoint New Station Staff
+        <div className="rounded-lg shadow-md overflow-hidden">
+          <div className="bg-[#0e271f] text-[#ecd89f] border-2 border-[#caa455] p-3 sm:p-3.5 flex items-center justify-between rounded-t-lg shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <Users className="w-5 h-5 text-[#ecd89f]" />
+              <h2 className="font-heading font-bold text-sm sm:text-base tracking-wider uppercase text-[#fff0c9]">
+                PERSONNEL CREDENTIALS ({users.length})
+              </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                type="text"
-                required
-                value={newStaffUsername}
-                onChange={(e) => setNewStaffUsername(e.target.value)}
-                placeholder="Username (e.g. courier2)"
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              />
-              <input
-                type="email"
-                required
-                value={newStaffEmail}
-                onChange={(e) => setNewStaffEmail(e.target.value)}
-                placeholder="Official Email"
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                type="password"
-                required
-                value={newStaffPassword}
-                onChange={(e) => setNewStaffPassword(e.target.value)}
-                placeholder="Password"
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              />
-              <select
-                value={newStaffRole}
-                onChange={(e) => setNewStaffRole(e.target.value)}
-                className="px-3 py-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
-              >
-                <option value="courier">Courier (Kurir Lapangan)</option>
-                <option value="admin">Admin (Kasir/Customer Service)</option>
-                <option value="supervisor">Supervisor (Inspektur Lapangan)</option>
-                <option value="manager">Manager (Kepala Ekspedisi)</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="w-full py-1.5 bg-amber-800 hover:bg-amber-900 text-stone-100 font-bold text-xs rounded border border-amber-950 shadow"
-            >
-              + Issue Staff Credentials
-            </button>
-          </form>
+          </div>
 
-          {/* Users List */}
-          <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-            {users.map((u) => (
-              <div
-                key={u.id}
-                className="bg-white p-3 rounded border border-stone-200 flex items-center justify-between gap-3 text-xs"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <strong className="text-stone-900">{u.username}</strong>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-100 text-amber-900 font-bold border border-amber-300">
-                      {u.role}
-                    </span>
-                  </div>
-                  <span className="text-stone-500 font-mono text-[11px]">{u.email}</span>
-                </div>
-
-                {u.role !== 'owner' && (
-                  <button
-                    onClick={() => handleDeleteUser(u.id, u.username)}
-                    className="p-1 text-red-700 hover:bg-red-50 rounded"
-                    title="Revoke credentials"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+          <div
+            className="border-x-2 border-b-2 border-[#cfc1a5] bg-[#fbf9f4] p-5 sm:p-6 rounded-b-lg space-y-4"
+            style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}
+          >
+            {/* Add Staff Form */}
+            <form onSubmit={handleCreateStaff} className="bg-white/95 p-4 rounded-md border border-[#dfd4bf] space-y-3">
+              <div className="font-heading font-bold text-xs uppercase tracking-wider text-[#3d2d1b]">
+                Appoint New Station Staff
               </div>
-            ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  required
+                  value={newStaffUsername}
+                  onChange={(e) => setNewStaffUsername(e.target.value)}
+                  placeholder="Username (e.g. courier2)"
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                />
+                <input
+                  type="email"
+                  required
+                  value={newStaffEmail}
+                  onChange={(e) => setNewStaffEmail(e.target.value)}
+                  placeholder="Official Email"
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="password"
+                  required
+                  value={newStaffPassword}
+                  onChange={(e) => setNewStaffPassword(e.target.value)}
+                  placeholder="Password"
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-mono shadow-inner"
+                />
+                <select
+                  value={newStaffRole}
+                  onChange={(e) => setNewStaffRole(e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-[#c5b597] rounded text-xs text-[#241c14] focus:ring-2 focus:ring-[#853c12] font-serif shadow-inner"
+                >
+                  <option value="courier">Courier (Kurir Lapangan)</option>
+                  <option value="admin">Admin (Kasir/Customer Service)</option>
+                  <option value="supervisor">Supervisor (Inspektur Lapangan)</option>
+                  <option value="manager">Manager (Kepala Ekspedisi)</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 bg-gradient-to-b from-[#873e16] to-[#59260a] text-[#fff0cf] font-heading font-bold text-xs uppercase tracking-wider rounded border border-[#caa455] shadow transition cursor-pointer"
+              >
+                + Issue Staff Credentials
+              </button>
+            </form>
+
+            {/* Users List */}
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {users.map((u) => (
+                <div
+                  key={u.id}
+                  className="bg-white/95 p-3 rounded-md border border-[#dfd4bf] flex items-center justify-between gap-3 text-xs shadow-2xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <strong className="text-stone-900">{u.username}</strong>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[#7a4816] text-[#ffd885] font-bold border border-[#b57a2b]">
+                        {u.role}
+                      </span>
+                    </div>
+                    <span className="text-[#735e46] font-mono text-[11px] mt-0.5 block">{u.email}</span>
+                  </div>
+
+                  {u.role !== 'owner' && (
+                    <button
+                      onClick={() => handleDeleteUser(u.id, u.username)}
+                      className="p-1 text-[#8c1d18] hover:bg-[#fdeeed] rounded cursor-pointer"
+                      title="Revoke credentials"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

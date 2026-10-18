@@ -35,30 +35,23 @@ Aplikasi frontend ini dibangun menggunakan **Vite**, **React 18**, dan **Tailwin
 
 ```text
 apps/interface/
-├── public/                 # Favicon dan aset statis
+├── public/                 # Aset statis (background.png, compass.png, logo.png, dll.)
 ├── src/
 │   ├── api/
-│   │   └── axiosInstance.js# Client HTTP tersentralisasi dengan Bearer token injector
-│   ├── context/
-│   │   └── AuthContext.jsx # Penyedia context autentikasi global (user, token, login, logout)
-│   ├── components/
-│   │   ├── Navbar.jsx      # Header telegraf stasiun dengan indikator user & logout
-│   │   ├── ProtectedRoute.jsx # Guard pelindung rute berdasarkan role
-│   │   └── StatusBadge.jsx # Badge status pesanan & Progress Stepper 7 tahap
-│   ├── pages/
-│   │   ├── Login.jsx       # Form masuk dengan 1-klik Quick-Access akun demo
-│   │   ├── Register.jsx    # Registrasi akun merchant (client) baru
-│   │   ├── Unauthorized.jsx# Halaman peringatan area terlarang jika peran tidak cocok
-│   │   └── dashboards/
-│   │       ├── ClientDashboard.jsx     # Pemesanan kargo & ACC Penerimaan Barang
-│   │       ├── CourierDashboard.jsx    # Waybill tugas kurir & ACC Selesai Pengiriman
-│   │       ├── AdminDashboard.jsx      # Verifikasi pembayaran & tiket catatan stasiun
-│   │       ├── SupervisorDashboard.jsx # Assign kurir & audit foto berdampingan (side-by-side)
-│   │       ├── ManagerDashboard.jsx    # Alokasi armada 1900-an & ACC Finalisasi Ekspedisi
-│   │       └── OwnerDashboard.jsx      # Keuangan treasury, armada inventaris, & kredensial staf
-│   ├── App.jsx             # Pemetaan routing & auto-dispatcher role
-│   ├── main.jsx            # Mounting React root
-│   └── index.css           # Konfigurasi Tailwind v4 & styling vintage
+│   │   ├── axiosInstance.js# Client HTTP tersentralisasi dengan Bearer token injector
+│   │   └── services/       # Service modular (auth, order, vehicle, user, acc)
+│   ├── app/
+│   │   ├── App.jsx         # Root component pembungkus AuthProvider & RouterProvider
+│   │   ├── context/        # Global AuthContext & state manajemen sesi
+│   │   └── routes/         # createBrowserRouter & layout rute terproteksi
+│   ├── components/         # Komponen UI (Navbar, ProtectedRoute, StatusBadge)
+│   ├── constants/          # Konstanta role, status order, route types, demo credentials
+│   ├── helpers/            # Helper formatters (formatCurrency, formatDate)
+│   ├── hooks/              # Custom hooks (useAuth)
+│   ├── pages/              # Halaman Login, Register, Unauthorized
+│   │   └── dashboards/     # 6 Dashboard khusus peran (Client, Courier, Admin, dll.)
+│   ├── index.css           # Konfigurasi Tailwind CSS v4 & styling vintage
+│   └── main.jsx            # Mounting React DOM ke elemen #root
 ├── index.html              # HTML shell dengan preconnect font klasik
 ├── vite.config.js          # Integrasi plugin @tailwindcss/vite
 └── package.json            # Dependensi interface

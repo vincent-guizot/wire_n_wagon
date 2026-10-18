@@ -55,16 +55,17 @@ wire_n_wagon/
     │
     └── interface/                 # Frontend Web Client
         ├── README.md              # Panduan teknis frontend Vite & Tailwind v4
-        ├── public/                # Aset statis & logo
+        ├── public/                # Aset statis (background.png, compass.png, logo.png, dll.)
         ├── src/
-        │   ├── api/               # Konfigurasi Axios & Bearer token interceptor
-        │   ├── context/           # Global AuthContext & state manajemen sesi
+        │   ├── api/               # Axios & Service modul (auth, order, vehicle, user, acc)
+        │   ├── app/               # Root App.jsx, context/AuthContext, routes/ (createBrowserRouter)
         │   ├── components/        # UI components (Navbar, ProtectedRoute, StatusBadge)
-        │   ├── pages/             # Halaman Login, Register, Unauthorized
-        │   │   └── dashboards/    # 6 Dashboard khusus peran (Client, Courier, Admin, dll.)
-        │   ├── App.jsx            # Routing utama aplikasi
-        │   ├── main.jsx           # Entry point React DOM
-        │   └── index.css          # Desain tema vintage 1900-an (@import "tailwindcss";)
+        │   ├── constants/         # Konstanta role, status, route types, demo credentials
+        │   ├── helpers/           # Helper formatters (formatCurrency, formatDate)
+        │   ├── hooks/             # Custom hooks (useAuth)
+        │   ├── pages/             # Halaman Login, Register, Unauthorized & 6 Dashboards
+        │   ├── index.css          # Desain tema vintage 1900-an (@import "tailwindcss";)
+        │   └── main.jsx           # Entry point React DOM
         ├── index.html             # HTML template dengan tipografi klasik
         ├── vite.config.js         # Konfigurasi Vite & plugin Tailwind CSS v4
         └── package.json           # Dependensi React frontend

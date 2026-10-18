@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../api/axiosInstance';
+import orderService from '../../api/services/orderService';
 import StatusBadge from '../../components/StatusBadge';
-import { Shield, CheckCircle, AlertTriangle, FileText, Search, XCircle } from 'lucide-react';
+import { formatDate } from '../../helpers/formatters';
+import { CheckCircle, FileText, Search, RotateCcw, Shield } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
@@ -19,8 +20,8 @@ export default function AdminDashboard() {
   const fetchAllOrders = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/orders');
-      setOrders(res.data.data);
+      const res = await orderService.getOrders();
+      setOrders(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load master orders');
     } finally {
@@ -36,8 +37,8 @@ export default function AdminDashboard() {
     setError('');
     setSuccess('');
     try {
-      const res = await api.put(`/orders/${orderId}/verify-payment`);
-      setSuccess(res.data.message || 'Payment verified successfully!');
+      const res = await orderService.verifyPayment(orderId);
+      setSuccess(res.message || 'Payment verified successfully!');
       fetchAllOrders();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to verify payment');
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
     setError('');
     setSuccess('');
     try {
-      const res = await api.put(`/orders/${orderId}/cancel`);
+      await orderService.cancelOrder(orderId);
       setSuccess('Order marked as Cancelled.');
       fetchAllOrders();
     } catch (err) {
@@ -65,10 +66,8 @@ export default function AdminDashboard() {
     setSuccess('');
 
     try {
-      const res = await api.put(`/orders/${activeIssueOrder.id}/issue`, {
-        issue_notes: issueNotes
-      });
-      setSuccess('Station ticket / issue note recorded.');
+      await orderService.addIssue(activeIssueOrder.id, issueNotes);
+      setSuccess('Station ticket / incident note recorded.');
       setActiveIssueOrder(null);
       setIssueNotes('');
       fetchAllOrders();
@@ -89,50 +88,50 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="border-b-2 border-stone-300 pb-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-stone-900">
-            Station Administration & Payment Ledger
-          </h1>
-          <p className="text-sm font-mono text-stone-600 uppercase tracking-widest mt-1">
-            Cashier Verification · Address Corrections · Incident Notes
-          </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-serif">
+      {/* Page Title */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl sm:text-4xl font-heading font-bold text-[#1a140d] tracking-wide uppercase drop-shadow-2xs">
+          STATION ADMINISTRATION & CASHIER LEDGER
+        </h1>
+        <div className="flex items-center justify-center gap-3 my-2">
+          <div className="h-[1px] w-16 bg-[#caa455]"></div>
+          <span className="text-[#caa455] text-xs">❖</span>
+          <div className="h-[1px] w-16 bg-[#caa455]"></div>
         </div>
-        <button
-          onClick={fetchAllOrders}
-          className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-mono font-bold rounded border border-stone-400 transition self-start"
-        >
-          ↻ Refresh Ledger
-        </button>
+        <p className="text-xs font-mono font-semibold text-[#66533c] uppercase tracking-widest">
+          PAYMENT VERIFICATION &nbsp;·&nbsp; WAYBILL AUDIT &nbsp;·&nbsp; INCIDENT TICKETS
+        </p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-700 text-red-900 text-sm flex items-center justify-between">
+        <div className="mb-6 p-4 bg-[#fdf2f2] border-l-4 border-[#8c1d18] text-[#8c1d18] text-xs rounded shadow-xs flex items-center justify-between">
           <span>{error}</span>
-          <button onClick={() => setError('')} className="text-red-700 font-bold">&times;</button>
+          <button onClick={() => setError('')} className="text-[#8c1d18] font-bold text-sm cursor-pointer">&times;</button>
         </div>
       )}
 
       {success && (
-        <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-700 text-emerald-950 text-sm flex items-center justify-between">
+        <div className="mb-6 p-4 bg-[#e6f8ee] border-l-4 border-[#16a34a] text-[#136336] text-xs rounded shadow-xs flex items-center justify-between">
           <span>{success}</span>
-          <button onClick={() => setSuccess('')} className="text-emerald-700 font-bold">&times;</button>
+          <button onClick={() => setSuccess('')} className="text-[#136336] font-bold text-sm cursor-pointer">&times;</button>
         </div>
       )}
 
       {/* Filter and Search Bar */}
-      <div className="bg-stone-50 border-2 border-stone-300 rounded p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <div
+        className="border-2 border-[#cfc1a5] bg-[#fbf9f4] rounded-lg p-4 mb-6 shadow-xs flex flex-wrap items-center justify-between gap-4"
+        style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}
+      >
+        <div className="flex flex-wrap items-center gap-1.5">
           {['ALL', 'Pending', 'Payment_Verified', 'On_Delivery', 'Waiting_Verification', 'Completed', 'Cancelled'].map((st) => (
             <button
               key={st}
               onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1 text-xs font-mono rounded transition ${
+              className={`px-3 py-1 text-xs font-mono rounded transition cursor-pointer ${
                 filterStatus === st
-                  ? 'bg-amber-800 text-stone-100 font-bold shadow'
-                  : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
+                  ? 'bg-gradient-to-b from-[#873e16] to-[#59260a] text-[#fff0cf] font-bold shadow border border-[#caa455]'
+                  : 'bg-[#ebdcc4] text-[#4d3a24] hover:bg-[#decbb1] border border-[#d5c7ad]'
               }`}
             >
               {st.replace('_', ' ')}
@@ -141,22 +140,41 @@ export default function AdminDashboard() {
         </div>
 
         <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-stone-400" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#735e46]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search receipt / cargo / client..."
-            className="w-full pl-9 pr-3 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-800"
+            className="w-full pl-9 pr-3 py-1.5 bg-white/90 border border-[#c5b597] rounded text-xs text-[#241c14] focus:outline-none focus:ring-1 focus:ring-[#853c12] font-serif shadow-inner"
           />
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-stone-50 border-2 border-stone-300 rounded shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-stone-200 border-b border-stone-300 text-stone-700 font-heading uppercase tracking-wider text-[11px]">
+      {/* Orders Table Container */}
+      <div className="rounded-lg shadow-md overflow-hidden">
+        <div className="bg-[#0e271f] text-[#ecd89f] border-2 border-[#caa455] p-3 sm:p-3.5 flex items-center justify-between rounded-t-lg shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <Shield className="w-5 h-5 text-[#ecd89f]" />
+            <h2 className="font-heading font-bold text-sm sm:text-base tracking-wider uppercase text-[#fff0c9]">
+              MASTER ORDER LEDGER ({filteredOrders.length})
+            </h2>
+          </div>
+          <button
+            onClick={fetchAllOrders}
+            className="text-xs font-mono font-bold text-[#ecd89f] hover:text-white flex items-center gap-1 transition cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Refresh Ledger</span>
+          </button>
+        </div>
+
+        <div
+          className="border-x-2 border-b-2 border-[#cfc1a5] bg-[#fbf9f4] p-5 sm:p-6 rounded-b-lg overflow-x-auto"
+          style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}
+        >
+          <table className="w-full text-left text-xs bg-white/90 border border-[#dfd4bf] rounded-md overflow-hidden">
+            <thead className="bg-[#0e271f] text-[#ecd89f] font-heading uppercase text-[11px] tracking-wider">
               <tr>
                 <th className="py-3 px-4">Receipt No.</th>
                 <th className="py-3 px-4">Merchant (Client)</th>
@@ -164,69 +182,68 @@ export default function AdminDashboard() {
                 <th className="py-3 px-4">Route Path</th>
                 <th className="py-3 px-4">Status & Payment</th>
                 <th className="py-3 px-4">Notes / Issue</th>
-                <th className="py-3 px-4 text-right">Administrative Actions</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-200 bg-white">
+            <tbody className="divide-y divide-[#e5dcce]">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-stone-500 font-mono">
-                    Inspecting ledger pages...
+                  <td colSpan={7} className="py-8 text-center text-[#735e46] font-mono">
+                    Auditing Cashier Ledger...
                   </td>
                 </tr>
               ) : filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-stone-500 italic font-serif">
+                  <td colSpan={7} className="py-8 text-center text-[#735e46] italic font-serif">
                     No orders matching selected criteria found in administration records.
                   </td>
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-amber-50/40 transition">
-                    <td className="py-3 px-4 font-mono font-bold text-amber-950 whitespace-nowrap">
+                  <tr key={order.id} className="hover:bg-[#fcf8ef] transition">
+                    <td className="py-3.5 px-4 font-mono font-bold text-[#784315] whitespace-nowrap">
                       {order.receipt_number}
                     </td>
-                    <td className="py-3 px-4 font-medium text-stone-800 whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-medium text-stone-900 whitespace-nowrap">
                       {order.client?.username}
                     </td>
-                    <td className="py-3 px-4 text-stone-700">
+                    <td className="py-3.5 px-4 text-stone-800">
                       <strong>{order.item_name}</strong> ({order.weight_kg} kg)
                     </td>
-                    <td className="py-3 px-4 text-stone-600">
+                    <td className="py-3.5 px-4 text-stone-700">
                       <div>{order.origin} &rarr; {order.destination}</div>
-                      <span className="text-[10px] uppercase font-mono text-stone-400">
+                      <span className="text-[10px] uppercase font-mono text-[#8a765d]">
                         {order.route_type}
                       </span>
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="mb-1"><StatusBadge status={order.status} /></div>
                       <div className="text-[11px] font-mono">
                         {order.is_paid ? (
-                          <span className="text-emerald-700 font-bold">✓ Paid (Verified)</span>
+                          <span className="text-[#136336] font-bold">✓ Paid (Verified)</span>
                         ) : (
-                          <span className="text-amber-800 font-bold">⏳ Unpaid</span>
+                          <span className="text-[#853c12] font-bold">⏳ Unpaid</span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-stone-600 max-w-xs">
+                    <td className="py-3.5 px-4 text-stone-700 max-w-xs">
                       {order.issue_notes ? (
-                        <div className="p-1.5 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-950 font-serif">
+                        <div className="p-1.5 bg-[#fff8e7] border border-[#d98214] rounded text-[11px] text-[#6e430f] font-serif">
                           {order.issue_notes}
                         </div>
                       ) : (
                         <span className="text-stone-400 italic">None</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
                         {order.status === 'Pending' && !order.is_paid && (
                           <button
                             onClick={() => handleVerifyPayment(order.id)}
-                            className="px-2.5 py-1 bg-emerald-800 hover:bg-emerald-900 text-white rounded text-[11px] font-bold flex items-center gap-1 shadow transition"
-                            title="Verify Client Payment"
+                            className="px-2.5 py-1 bg-gradient-to-b from-[#136336] to-[#0c4023] text-white rounded text-[11px] font-bold flex items-center gap-1 shadow transition cursor-pointer"
                           >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Verifikasi Pembayaran
+                            <CheckCircle className="w-3.5 h-3.5 text-[#a7f3d0]" />
+                            Verifikasi Bayar
                           </button>
                         )}
 
@@ -235,18 +252,16 @@ export default function AdminDashboard() {
                             setActiveIssueOrder(order);
                             setIssueNotes(order.issue_notes || '');
                           }}
-                          className="px-2.5 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded text-[11px] font-bold flex items-center gap-1 border border-stone-300 transition"
-                          title="Record Issue / Incident Note"
+                          className="px-2.5 py-1 bg-[#ebdcc4] hover:bg-[#decbb1] text-[#4d3a24] rounded text-[11px] font-bold flex items-center gap-1 border border-[#caa455] transition cursor-pointer"
                         >
-                          <FileText className="w-3.5 h-3.5" />
+                          <FileText className="w-3.5 h-3.5 text-[#853c12]" />
                           Catat Kendala
                         </button>
 
                         {order.status === 'Pending' && (
                           <button
                             onClick={() => handleCancelOrder(order.id)}
-                            className="px-2 py-1 text-red-700 hover:bg-red-50 rounded text-[11px] font-bold border border-red-300 transition"
-                            title="Cancel Order"
+                            className="px-2 py-1 text-[#8c1d18] hover:bg-[#fdeeed] rounded text-[11px] font-bold border border-[#f7a29e] transition cursor-pointer"
                           >
                             Batal
                           </button>
@@ -261,20 +276,25 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Issue Note Modal */}
+      {/* Issue Modal */}
       {activeIssueOrder && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-stone-50 border-2 border-stone-400 rounded max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-heading font-bold text-stone-900 mb-2">
-              Tiket Komplain / Catatan Kendala
-            </h3>
-            <p className="text-xs text-stone-600 mb-4 font-mono">
-              Order: <strong className="text-amber-950">{activeIssueOrder.receipt_number}</strong>
-            </p>
+        <div className="fixed inset-0 bg-[#0e1612]/75 backdrop-blur-2xs flex items-center justify-center p-4 z-50">
+          <div
+            className="bg-[#fdfbf6] border-4 border-[#3d2c1c] rounded-lg max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4"
+            style={{ backgroundImage: `url('/parchment-paper.png')`, backgroundSize: 'cover' }}
+          >
+            <div className="border-b border-[#d8caba] pb-3">
+              <h3 className="text-xl font-heading font-bold text-[#21170d] tracking-wide">
+                TIKET KENDALA OPERASIONAL
+              </h3>
+              <p className="text-xs text-[#735e46] font-mono mt-0.5">
+                Waybill: <strong className="text-[#853c12]">{activeIssueOrder.receipt_number}</strong>
+              </p>
+            </div>
 
             <form onSubmit={handleSaveIssue} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[#4d3a24] uppercase tracking-wider mb-1 font-mono">
                   Catatan Komplain / Koreksi Alamat
                 </label>
                 <textarea
@@ -283,22 +303,22 @@ export default function AdminDashboard() {
                   value={issueNotes}
                   onChange={(e) => setIssueNotes(e.target.value)}
                   placeholder="e.g. Alamat gudang tujuan dikoreksi ke Dermaga 3. Barang rentan basah."
-                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded text-sm text-stone-900 focus:ring-2 focus:ring-amber-800 focus:outline-none"
+                  className="w-full px-3 py-2 bg-white/90 border border-[#c5b597] rounded text-sm text-[#241c14] focus:ring-2 focus:ring-[#853c12] focus:outline-none font-serif shadow-inner"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d8caba]">
                 <button
                   type="button"
                   onClick={() => setActiveIssueOrder(null)}
-                  className="px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-200 hover:bg-stone-300 rounded transition"
+                  className="px-4 py-2 text-xs font-semibold text-[#4d3a24] bg-[#ebdcc4] hover:bg-[#decbb1] rounded border border-[#caa455] transition cursor-pointer"
                 >
                   Tutup
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingIssue}
-                  className="px-4 py-2 text-xs font-bold bg-amber-800 hover:bg-amber-900 text-stone-100 rounded border border-amber-950 shadow transition disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-heading font-bold uppercase tracking-wider bg-gradient-to-b from-[#873e16] to-[#59260a] text-[#fff0cf] rounded border border-[#caa455] shadow transition cursor-pointer disabled:opacity-60"
                 >
                   {isSubmittingIssue ? 'Menyimpan...' : 'Simpan Catatan'}
                 </button>
