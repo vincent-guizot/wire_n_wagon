@@ -1,0 +1,43 @@
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: wire_n_wagon_dev
+    volumes:
+      - wire_wagon_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wire_n_wagon_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      NODE_ENV: development
+      DOCKER_ENV: "true"
+      PORT: 3000
+      DATABASE_URL: postgres://postgres:admin@db:5432/wire_n_wagon_dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  interface:
+    build:
+      context: ./apps/interface
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  wire_wagon_db_data:

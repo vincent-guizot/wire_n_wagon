@@ -1,8 +1,11 @@
-const path = require('path');
+const path = require("path");
+
+const configFile =
+  process.env.DOCKER_ENV === "true" ? "config.docker.json" : "config.json";
 
 module.exports = {
-  'config': path.resolve('config', 'config.json'),
-  'models-path': path.resolve('models'),
-  'seeders-path': path.resolve('seeders'),
-  'migrations-path': path.resolve('migrations')
+  config: path.resolve("config", configFile),
+  "models-path": path.resolve("models"),
+  "seeders-path": path.resolve("seeders"),
+  "migrations-path": path.resolve("migrations"),
 };
